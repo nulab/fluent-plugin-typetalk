@@ -20,10 +20,7 @@ module Fluent
 
     def configure(conf)
       super
-
       @typetalk = Typetalk.new(conf['client_id'], conf['client_secret'])
-      @topic_id = conf['topic_id']
-      @template = conf['template']      
     end
 
     def start
@@ -67,17 +64,30 @@ module Fluent
       http.use_ssl = true
       res = http.post(
         '/oauth2/access_token',
-        "client_id=#{client_id}&client_secret=#{client_secret}&grant_type=client_credentials&scope=topic.post"
+        "client_id=#{@client_id}&client_secret=#{@client_secret}&grant_type=client_credentials&scope=topic.post"
       )
       json = JSON.parse(res.body)
       access_token = json['access_token']
 
-      req = Net::HTTP::Post.new("/api/v1/topics/#{topic_id}")
-      req['Authorization'] = "Bearer #{access_token}"
-      req.set_form_data({:message=>message})
-      http.request(req)
+      http.post(
+        "/api/v1/topics/#{topic_id}",
+        "message=#{message}",
+        { 'Authorization' => "Bearer #{access_token}" }
+      )
+
+#      req = Net::HTTP::Post.new("/api/v1/topics/#{topic_id}")
+#      req['Authorization'] = "Bearer #{access_token}"
+#      req.set_form_data({:message=>message})
+#      http.request(req)
       
     end
+
+    def get_token
+
+
+    end
+
+
 
   end
 
