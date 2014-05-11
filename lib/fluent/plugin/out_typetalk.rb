@@ -10,11 +10,14 @@ module Fluent
 
     attr_reader :typetalk
 
+    # Define `log` method for v0.10.42 or earlier
+    # see http://blog.livedoor.jp/sonots/archives/36150373.html
+    unless method_defined?(:log)
+      define_method("log") { $log }
+    end
+
     def initialize
       super
-      require 'net/https'
-      require 'uri'
-      require 'json'
       require 'erb'
     end
 
@@ -40,7 +43,7 @@ module Fluent
         begin
           send_message(tag, time, record)
         rescue => e
-          $log.error("Typetalk Error:", :error_class => e.class, :error => e.message)
+          log.error("Typetalk Error:", :error_class => e.class, :error => e.message)
         end
       end
     end
@@ -55,40 +58,63 @@ module Fluent
   class Typetalk
 
     def initialize(client_id, client_secret)
+      require 'net/http'
+      require 'uri'
+      require 'json'
+
       @client_id = client_id
       @client_secret = client_secret
+
+      @http = Net::HTTP.new('typetalk.in', 443)
+      @http.use_ssl = true
     end
 
     def post(topic_id, message)
-      http = Net::HTTP.new('typetalk.in', 443)
-      http.use_ssl = true
-      res = http.post(
-        '/oauth2/access_token',
-        "client_id=#{@client_id}&client_secret=#{@client_secret}&grant_type=client_credentials&scope=topic.post"
-      )
-      json = JSON.parse(res.body)
-      access_token = json['access_token']
+      check_token()
+      $log.debug("Typetalk access_token : #{@access_token}")
 
-      http.post(
+      @http.post(
         "/api/v1/topics/#{topic_id}",
         "message=#{message}",
-        { 'Authorization' => "Bearer #{access_token}" }
+        { 'Authorization' => "Bearer #{@access_token}" }
+      )
+    end
+
+    def check_token
+
+      if @access_token.nil?
+        update_token()
+      elsif Time.now >= @expires
+        update_token(true)
+      end
+
+    end
+
+    def update_token(refresh = false)
+      params = "client_id=#{@client_id}&client_secret=#{@client_secret}"
+      unless refresh
+        params << "&grant_type=client_credentials&scope=topic.post"
+      else
+        params << "&grant_type=refresh_token&refresh_token=#{@refresh_token}"
+      end
+
+      res = @http.post(
+        "/oauth2/access_token",
+        params
       )
 
-#      req = Net::HTTP::Post.new("/api/v1/topics/#{topic_id}")
-#      req['Authorization'] = "Bearer #{access_token}"
-#      req.set_form_data({:message=>message})
-#      http.request(req)
-      
+      if res.is_a?(Net::HTTPUnauthorized)
+        raise TypetalkError, "Invalid credentials used. check client_id and client_secret in your configuration."
+      end
+
+      json = JSON.parse(res.body)
+      @expires = Time.now + json['expires_in'].to_i
+      @refresh_token = json['refresh_token']
+      @access_token = json['access_token']
     end
-
-    def get_token
-
-
-    end
-
-
 
   end
+
+  class TypetalkError < RuntimeError; end
 
 end

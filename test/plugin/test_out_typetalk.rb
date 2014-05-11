@@ -1,3 +1,5 @@
+# coding: utf-8
+
 require 'helper'
 
 class TypetalkOutputTest < Test::Unit::TestCase
@@ -23,8 +25,16 @@ class TypetalkOutputTest < Test::Unit::TestCase
     assert_equal d.instance.typetalk.instance_variable_get(:@client_secret), 'secret'
   end
 
-#  def test_write
-#    d = create_driver
+#  def test_send_message
+#    d = create_driver(<<-EOF)
+#                      type typetalk
+#                      client_id <your client_id>
+#                      client_secret <your client_secret>
+#                      topic_id <your topic>
+#                      EOF
+#    d.emit({'message' => 'test1'})
+#    d.emit({'message' => 'test2日本語'})
+#    d.run
 #  end
 
 end
