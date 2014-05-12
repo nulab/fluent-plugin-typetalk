@@ -43,7 +43,7 @@ module Fluent
         begin
           send_message(tag, time, record)
         rescue => e
-          log.error("Typetalk Error:", :error_class => e.class, :error => e.message)
+          log.error("out_typetalk:", :error_class => e.class, :error => e.message)
         end
       end
     end
@@ -73,11 +73,17 @@ module Fluent
       check_token()
       $log.debug("Typetalk access_token : #{@access_token}")
 
-      @http.post(
+      res = @http.post(
         "/api/v1/topics/#{topic_id}",
         "message=#{message}",
         { 'Authorization' => "Bearer #{@access_token}" }
       )
+
+      # todo: handling 429
+      unless res and res.is_a?(Net::HTTPSuccess)
+        raise TypetalkError, "failed to post to typetalk.in, code: #{res && res.code}"
+      end
+
     end
 
     def check_token
@@ -104,7 +110,11 @@ module Fluent
       )
 
       if res.is_a?(Net::HTTPUnauthorized)
-        raise TypetalkError, "Invalid credentials used. check client_id and client_secret in your configuration."
+        raise TypetalkError, "invalid credentials used. check client_id and client_secret in your configuration."
+      end
+
+      unless res.is_a?(Net::HTTPSuccess)
+        raise TypetalkError, "unexpected error occured in getting access_token, code: #{res && res.code}"
       end
 
       json = JSON.parse(res.body)
