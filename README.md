@@ -57,9 +57,19 @@ Pull requests are very welcome!!
 
 ## For developers
 
+You have to run the command below when starting development.
+```
+$ bundle install --path vendor/bundle
+```
+
 To run tests, do the following.
 ```
 $ VERBOSE=1 bundle exec rake test
+```
+
+When releasing, call rake release as follows.
+```
+$ bundle exec rake release
 ```
 
 ## Copyright
