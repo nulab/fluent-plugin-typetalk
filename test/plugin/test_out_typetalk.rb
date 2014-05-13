@@ -13,7 +13,8 @@ class TypetalkOutputTest < Test::Unit::TestCase
     client_id 123456
     client_secret secret
     topic_id 1
-    template <%= record.to_json %>
+    message notice : %s
+    out_keys message
   ]
 
   def create_driver(conf = CONFIG, tag = 'test')
@@ -28,15 +29,16 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_write
     d = create_driver()
-    stub(d.instance.typetalk).post(1, '{"message":"test1"}')
+    stub(d.instance.typetalk).post(1, 'notice : test1')
     d.emit({'message' => 'test1'})
     d.run()
   end
 
   def test_template
     d = create_driver(CONFIG, 'warn')
-    d.instance.template = "<%= tag %> at <%= Time.at(time).localtime %>\n<%= record.to_json %>"
-    stub(d.instance.typetalk).post(1, "warn at 2014-05-13 01:05:38 +0900\n{\"message\":\"test1\"}")
+    d.instance.message = "notice : %s [%s]"
+    d.instance.out_keys = ["message", "time"]
+    stub(d.instance.typetalk).post(1, "notice : test1 [1399910738]")
 
     ENV["TZ"]="Asia/Tokyo"
     t = Time.strptime('2014-05-13 01:05:38', '%Y-%m-%d %T')

@@ -5,8 +5,13 @@ module Fluent
     config_param :client_id, :string
     config_param :client_secret, :string
     config_param :topic_id, :integer
-    config_param :template, :string, :default => "<%= tag %> at <%= Time.at(time).localtime %>\n<%= record.to_json %>"
     config_param :flush_interval, :time, :default => 1
+
+    config_param :message, :string
+    config_param :out_keys, :string, :default => ""
+    config_param :time_key, :string, :default => 'time'
+    config_param :time_format, :string, :default => nil
+    config_param :tag_key, :string, :default => 'tag'
 
     attr_reader :typetalk
 
@@ -19,11 +24,32 @@ module Fluent
     def initialize
       super
       require 'erb'
+      require 'socket'
     end
 
     def configure(conf)
       super
       @typetalk = Typetalk.new(conf['client_id'], conf['client_secret'])
+      @hostname = Socket.gethostname
+
+      @out_keys = @out_keys.split(',')
+
+      begin
+        @message % (['1'] * @out_keys.length)
+      rescue ArgumentError
+        raise Fluent::ConfigError, "string specifier '%s' and out_keys specification mismatch"
+      end
+
+      if @time_format
+        f = @time_format
+        tf = Fluent::TimeFormatter.new(f, true) # IRC notification is formmatted as localtime only...
+        @time_format_proc = tf.method(:format)
+        @time_parse_proc = Proc.new {|str| Time.strptime(str, f).to_i }
+      else
+        @time_format_proc = Proc.new {|time| time.to_s }
+        @time_parse_proc = Proc.new {|str| str.to_i }
+      end
+
     end
 
     def start
@@ -49,13 +75,33 @@ module Fluent
     end
 
     def send_message(tag, time, record)
-      message = ERB.new(@template).result(binding)
+      message = evaluate_message(tag, time, record)
       @typetalk.post(@topic_id, message)
+    end
+
+    def evaluate_message(tag, time, record)
+
+      values = out_keys.map do |key|
+        case key
+        when @time_key
+          @time_format_proc.call(time)
+        when @tag_key
+          tag
+        when "$hostname"
+          @hostname
+        else
+          record[key].to_s
+        end
+      end
+
+      (message % values).gsub(/\\n/, "\n")
     end
 
   end
 
   class Typetalk
+
+    USER_AGENT = "fluent-plugin-typetalk Ruby/#{RUBY_VERSION}"
 
     def initialize(client_id, client_secret)
       require 'net/http'
@@ -76,12 +122,17 @@ module Fluent
       res = @http.post(
         "/api/v1/topics/#{topic_id}",
         "message=#{message}",
-        { 'Authorization' => "Bearer #{@access_token}" }
+        { 'Authorization' => "Bearer #{@access_token}", 'User-Agent' => USER_AGENT }
       )
 
       # todo: handling 429
       unless res and res.is_a?(Net::HTTPSuccess)
-        raise TypetalkError, "failed to post to typetalk.in, code: #{res && res.code}"
+        msg = ""
+        unless res.body.nil?
+          json = JSON.parse(res.body)
+          msg = json.fetch('errors', [])[0].fetch('message',"")
+        end
+        raise TypetalkError, "failed to post, msg: #{msg}, code: #{res.code}"
       end
 
     end
@@ -106,7 +157,8 @@ module Fluent
 
       res = @http.post(
         "/oauth2/access_token",
-        params
+        params,
+        { 'User-Agent' => USER_AGENT }
       )
 
       if res.is_a?(Net::HTTPUnauthorized)
