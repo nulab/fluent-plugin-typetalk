@@ -1,8 +1,8 @@
-# fluent-plugin-typetalk
+# fluent-plugin-typetalk [![Build Status](https://travis-ci.org/tksmd/fluent-plugin-typetalk.png?branch=master)](https://travis-ci.org/tksmd/fluent-plugin-typetalk)
 
 ## Overview
 
-[Fluentd](http://fluentd.org) plugin to emit notifications to Typetalk.
+[Fluentd](http://fluentd.org) plugin to emit notifications to [Typetalk](http://typetalk.in/).
 
 ## Installation
 
@@ -74,5 +74,5 @@ $ bundle exec rake release
 
 ## Copyright
 
-Copyright :  Copyright (c) 2014- Takashi Someda (@tksmd)
-License   :  Apache License, Version 2.0
+* Copyright :  Copyright (c) 2014- Takashi Someda ([@tksmd](http://twitter.com/tksmd/))
+* License   :  Apache License, Version 2.0
