@@ -23,7 +23,6 @@ module Fluent
 
     def initialize
       super
-      require 'erb'
       require 'socket'
     end
 
