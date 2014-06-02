@@ -24,11 +24,18 @@ module Fluent
     def initialize
       super
       require 'socket'
+      require 'typetalk'
     end
 
     def configure(conf)
       super
-      @typetalk = Typetalk.new(conf['client_id'], conf['client_secret'])
+      Typetalk.configure do |c|
+        c.client_id = conf['client_id']
+        c.client_secret = conf['client_secret']
+        c.scope = 'topic.post'
+        c.user_agent = "fluent-plugin-typetalk Ruby/#{RUBY_VERSION}"
+      end
+      @typetalk = Typetalk::Api.new
       @hostname = Socket.gethostname
 
       @out_keys = @out_keys.split(',')
@@ -75,7 +82,19 @@ module Fluent
 
     def send_message(tag, time, record)
       message = evaluate_message(tag, time, record)
-      @typetalk.post(@topic_id, message)
+      begin
+        @typetalk.post_message(@topic_id, message)
+      rescue Typetalk::Unauthorized
+        raise TypetalkError, "invalid credentials used. check client_id and client_secret in your configuration."
+      rescue => e
+        msg = ''
+        res = JSON.parse(e.message) rescue {}
+        unless res['body'].nil?
+          body = JSON.parse(res['body']) rescue {}
+          msg = body['error']
+        end
+        raise TypetalkError, "failed to post, msg: #{msg}, code: #{res['status']}"
+      end
     end
 
     def evaluate_message(tag, time, record)
@@ -94,84 +113,6 @@ module Fluent
       end
 
       (message % values).gsub(/\\n/, "\n")
-    end
-
-  end
-
-  class Typetalk
-
-    USER_AGENT = "fluent-plugin-typetalk Ruby/#{RUBY_VERSION}"
-
-    def initialize(client_id, client_secret)
-      require 'net/http'
-      require 'uri'
-      require 'json'
-
-      @client_id = client_id
-      @client_secret = client_secret
-
-      @http = Net::HTTP.new('typetalk.in', 443)
-      @http.use_ssl = true
-    end
-
-    def post(topic_id, message)
-      check_token()
-      $log.debug("Typetalk access_token : #{@access_token}")
-
-      res = @http.post(
-        "/api/v1/topics/#{topic_id}",
-        "message=#{message}",
-        { 'Authorization' => "Bearer #{@access_token}", 'User-Agent' => USER_AGENT }
-      )
-
-      # todo: handling 429
-      unless res and res.is_a?(Net::HTTPSuccess)
-        msg = ""
-        unless res.body.nil?
-          json = JSON.parse(res.body)
-          msg = json.fetch('errors', [])[0].fetch('message',"")
-        end
-        raise TypetalkError, "failed to post, msg: #{msg}, code: #{res.code}"
-      end
-
-    end
-
-    def check_token
-
-      if @access_token.nil?
-        update_token()
-      elsif Time.now >= @expires
-        update_token(true)
-      end
-
-    end
-
-    def update_token(refresh = false)
-      params = "client_id=#{@client_id}&client_secret=#{@client_secret}"
-      unless refresh
-        params << "&grant_type=client_credentials&scope=topic.post"
-      else
-        params << "&grant_type=refresh_token&refresh_token=#{@refresh_token}"
-      end
-
-      res = @http.post(
-        "/oauth2/access_token",
-        params,
-        { 'User-Agent' => USER_AGENT }
-      )
-
-      if res.is_a?(Net::HTTPUnauthorized)
-        raise TypetalkError, "invalid credentials used. check client_id and client_secret in your configuration."
-      end
-
-      unless res.is_a?(Net::HTTPSuccess)
-        raise TypetalkError, "unexpected error occured in getting access_token, code: #{res && res.code}"
-      end
-
-      json = JSON.parse(res.body)
-      @expires = Time.now + json['expires_in'].to_i
-      @refresh_token = json['refresh_token']
-      @access_token = json['access_token']
     end
 
   end
