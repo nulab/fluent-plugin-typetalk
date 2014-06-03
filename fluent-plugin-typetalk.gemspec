@@ -21,6 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rr", ">= 1.0.0"
   spec.add_runtime_dependency "fluentd"
+  spec.add_runtime_dependency "typetalk"
 
   spec.required_ruby_version = '>= 1.9.3'
 end
