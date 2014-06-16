@@ -28,6 +28,17 @@ class TypetalkOutputTest < Test::Unit::TestCase
     limit 1
   ]
 
+  CONFIG_NO_THROTTLE = %[
+    type typetalk
+    client_id 123456
+    client_secret secret
+    topic_id 1
+    message notice : %s
+    out_keys message
+    interval 0
+    limit 0
+  ]
+
   def create_driver(conf = CONFIG, tag = 'test')
     Fluent::Test::OutputTestDriver.new(Fluent::TypetalkOutput, tag).configure(conf)
   end
@@ -39,6 +50,11 @@ class TypetalkOutputTest < Test::Unit::TestCase
     assert_equal 60, d.instance.instance_variable_get(:@interval)
     assert_equal 5, d.instance.instance_variable_get(:@limit)
     assert_equal true, d.instance.instance_variable_get(:@need_throttle)
+  end
+
+  def test_configure_no_throttle
+    d = create_driver(CONFIG_NO_THROTTLE)
+    assert_equal false, d.instance.instance_variable_get(:@need_throttle)
   end
 
   def test_write
