@@ -13,7 +13,7 @@ module Fluent
     config_param :tag_key, :string, :default => 'tag'
 
     config_param :interval, :time, :default => 60
-    config_param :limit, :integer, :default => 5
+    config_param :limit, :integer, :default => 10
 
     attr_reader :typetalk
 

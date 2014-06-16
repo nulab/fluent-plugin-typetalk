@@ -48,7 +48,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
     assert_equal '123456', Typetalk.config.client_id
     assert_equal 'secret', Typetalk.config.client_secret
     assert_equal 60, d.instance.instance_variable_get(:@interval)
-    assert_equal 5, d.instance.instance_variable_get(:@limit)
+    assert_equal 10, d.instance.instance_variable_get(:@limit)
     assert_equal true, d.instance.instance_variable_get(:@need_throttle)
   end
 

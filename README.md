@@ -52,7 +52,7 @@ This plugin allows you to use special value namely $hostname in out_keys. By usi
 </match>
 ```
 
-By default, number of notification you can send within a minute is limited to 5. Log lines that exceed this limit will be discarded. You can change it with `interval` and `limit` parameters.
+By default, the number of notification you can send within a minute is limited to 10. Log lines that exceed this limit will be discarded. You can change it with `interval` and `limit` parameters.
 ```
 <match ...>
   type typetalk
