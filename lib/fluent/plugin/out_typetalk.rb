@@ -1,17 +1,19 @@
 module Fluent
-  class TypetalkOutput < Fluent::BufferedOutput
+  class TypetalkOutput < Fluent::Output
     Fluent::Plugin.register_output('typetalk', self)
 
     config_param :client_id, :string
     config_param :client_secret, :string
     config_param :topic_id, :integer
-    config_param :flush_interval, :time, :default => 1
 
     config_param :message, :string
     config_param :out_keys, :string, :default => ""
     config_param :time_key, :string, :default => 'time'
     config_param :time_format, :string, :default => nil
     config_param :tag_key, :string, :default => 'tag'
+
+    config_param :interval, :time, :default => 60
+    config_param :limit, :integer, :default => 10
 
     attr_reader :typetalk
 
@@ -56,6 +58,9 @@ module Fluent
         @time_parse_proc = Proc.new {|str| str.to_i }
       end
 
+      @need_throttle = @limit > 0 && @interval > 0
+      @slot = []
+
     end
 
     def start
@@ -66,18 +71,35 @@ module Fluent
       super
     end
 
-    def format(tag, time, record)
-      [tag, time, record].to_msgpack
-    end
+    def emit(tag, es, chain)
+      es.each do |time, record|
+        if @need_throttle && throttle(time)
+          log.error("out_typetalk:", :error => "number of posting message within #{@interval}(sec) reaches to the limit #{@limit}")
+          next
+        end
 
-    def write(chunk)
-      chunk.msgpack_each do |(tag,time,record)|
         begin
           send_message(tag, time, record)
         rescue => e
           log.error("out_typetalk:", :error_class => e.class, :error => e.message)
         end
       end
+
+      chain.next
+    end
+
+    def throttle(time)
+      expired = time.to_f - @interval
+      while @slot.first && (@slot.first <= expired)
+        @slot.shift
+      end
+
+      exceed = @slot.length >= @limit
+      unless exceed
+        @slot.push(time.to_f)
+      end
+
+      exceed
     end
 
     def send_message(tag, time, record)

@@ -17,14 +17,44 @@ class TypetalkOutputTest < Test::Unit::TestCase
     out_keys message
   ]
 
+  CONFIG_THROTTLE = %[
+    type typetalk
+    client_id 123456
+    client_secret secret
+    topic_id 1
+    message notice : %s
+    out_keys message
+    interval 5
+    limit 1
+  ]
+
+  CONFIG_NO_THROTTLE = %[
+    type typetalk
+    client_id 123456
+    client_secret secret
+    topic_id 1
+    message notice : %s
+    out_keys message
+    interval 0
+    limit 0
+  ]
+
   def create_driver(conf = CONFIG, tag = 'test')
-    Fluent::Test::BufferedOutputTestDriver.new(Fluent::TypetalkOutput, tag).configure(conf)
+    Fluent::Test::OutputTestDriver.new(Fluent::TypetalkOutput, tag).configure(conf)
   end
 
   def test_configure
     d = create_driver()
     assert_equal '123456', Typetalk.config.client_id
     assert_equal 'secret', Typetalk.config.client_secret
+    assert_equal 60, d.instance.instance_variable_get(:@interval)
+    assert_equal 10, d.instance.instance_variable_get(:@limit)
+    assert_equal true, d.instance.instance_variable_get(:@need_throttle)
+  end
+
+  def test_configure_no_throttle
+    d = create_driver(CONFIG_NO_THROTTLE)
+    assert_equal false, d.instance.instance_variable_get(:@need_throttle)
   end
 
   def test_write
@@ -85,6 +115,21 @@ class TypetalkOutputTest < Test::Unit::TestCase
       assert_equal "failed to post, msg: , code: 404", params[:error]
     }
     d.emit({'message' => 'test1'})
+    d.run()
+  end
+
+  def test_throttle
+    d = create_driver(CONFIG_THROTTLE)
+    stub(d.instance.typetalk).post_message(1, 'notice : test1')
+    stub(d.instance.typetalk).post_message(1, 'notice : test3')
+    stub(d.instance.log).error {|name, params|
+      assert_equal "out_typetalk:", name
+      assert_equal "number of posting message within 5.0(sec) reaches to the limit 1", params[:error]
+    }
+    d.emit({'message' => 'test1'})
+    d.emit({'message' => 'test2'})
+    sleep 5
+    d.emit({'message' => 'test3'})
     d.run()
   end
 
