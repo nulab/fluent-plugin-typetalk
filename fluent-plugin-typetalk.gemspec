@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["someda@isenshi.com"]
   spec.description   = %q{fluent plugin to send message to typetalk}
   spec.summary       = spec.description
-  spec.homepage      = "https://github.com/tksmd/fluent-plugin-typetalk"
+  spec.homepage      = "https://github.com/nulab/fluent-plugin-typetalk"
   spec.license       = "Apache-2.0"
 
   spec.files         = `git ls-files`.split($/)
