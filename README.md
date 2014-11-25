@@ -1,4 +1,4 @@
-# fluent-plugin-typetalk [![Build Status](https://travis-ci.org/tksmd/fluent-plugin-typetalk.png?branch=master)](https://travis-ci.org/tksmd/fluent-plugin-typetalk)
+# fluent-plugin-typetalk [![Build Status](https://travis-ci.org/nulab/fluent-plugin-typetalk.svg?branch=master)](https://travis-ci.org/nulab/fluent-plugin-typetalk)
 
 ## Overview
 

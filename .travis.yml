@@ -1,3 +1,8 @@
 language: ruby
 rvm:
   - 1.9.3
+notifications:
+  webhooks:
+    urls:
+      - https://nulab-inc.com/hubot/travis?room=3741
+    # on_success: change
