@@ -115,9 +115,17 @@ module Fluent
         res = JSON.parse(e.message) rescue {}
         unless res['body'].nil?
           body = JSON.parse(res['body']) rescue {}
-          msg = body['errors'].map{|f|
-            f['field'] + ' : ' + f['message']
-          }.join(',')
+
+          # for auth error, the error stored in "error" property
+          # https://developer.nulab-inc.com/docs/typetalk/auth#client
+          if body.has_key?('error')
+            msg = body['error']
+          else
+            msg = body['errors'].map{|f|
+              f['field'] + ' : ' + f['message']
+            }.join(',')
+          end
+
         end
         raise TypetalkError, "failed to post, msg: #{msg}, code: #{res['status']}"
       end
