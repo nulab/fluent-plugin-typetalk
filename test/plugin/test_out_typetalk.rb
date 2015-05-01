@@ -93,12 +93,12 @@ class TypetalkOutputTest < Test::Unit::TestCase
   def test_post_message_invalid_request_error
     d = create_driver()
     stub(d.instance.typetalk).post_message(1, 'notice : test1') {
-      raise Typetalk::InvalidRequest, {status:400, headers:{}, body:'{"error":"invalid_client","error_description":""}'}.to_json
+      raise Typetalk::InvalidRequest, {status:400, headers:{}, body:'{"errors":[{"field":"message", "name":"error.maxLength", "message":"Maximum length is 4,096 characters."}]}'}.to_json
     }
     stub(d.instance.log).error {|name, params|
       assert_equal "out_typetalk:", name
       assert_equal Fluent::TypetalkError, params[:error_class]
-      assert_equal "failed to post, msg: invalid_client, code: 400", params[:error]
+      assert_equal "failed to post, msg: message : Maximum length is 4,096 characters., code: 400", params[:error]
     }
     d.emit({'message' => 'test1'})
     d.run()
@@ -107,7 +107,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
   def test_post_message_notfound_error
     d = create_driver()
     stub(d.instance.typetalk).post_message(1, 'notice : test1') {
-      raise Typetalk::NotFound, {status:404, headers:{}, body:''}.to_json
+      raise Typetalk::NotFound, {status:404, headers:{}, body:'{"errors":[]}'}.to_json
     }
     stub(d.instance.log).error {|name, params|
       assert_equal "out_typetalk:", name

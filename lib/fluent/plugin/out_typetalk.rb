@@ -113,7 +113,9 @@ module Fluent
         res = JSON.parse(e.message) rescue {}
         unless res['body'].nil?
           body = JSON.parse(res['body']) rescue {}
-          msg = body['error']
+          msg = body['errors'].map{|f|
+            f['field'] + ' : ' + f['message']
+          }.join(',')
         end
         raise TypetalkError, "failed to post, msg: #{msg}, code: #{res['status']}"
       end
