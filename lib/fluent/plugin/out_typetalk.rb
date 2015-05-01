@@ -120,10 +120,13 @@ module Fluent
           # https://developer.nulab-inc.com/docs/typetalk/auth#client
           if body.has_key?('error')
             msg = body['error']
-          else
+          elsif body.has_key?('errors')
             msg = body['errors'].map{|f|
               f['field'] + ' : ' + f['message']
             }.join(',')
+          elsif !res['headers'].nil?
+            headers = JSON.parse(res['headers']) rescue {}
+            msg = headers['www-authenticate']
           end
 
         end

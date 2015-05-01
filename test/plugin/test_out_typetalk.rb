@@ -143,6 +143,20 @@ class TypetalkOutputTest < Test::Unit::TestCase
     d.run()
   end
 
+  def test_oauth2_error
+    d = create_driver()
+    stub(d.instance.typetalk).post_message(1, 'notice : test1') {
+      raise Typetalk::InvalidRequest, {status:400, headers:'{"www-authenticate": "Bearer error=\"invalid_scope\""}', body:""}.to_json
+    }
+    stub(d.instance.log).error {|name, params|
+      assert_equal "out_typetalk:", name
+      assert_equal Fluent::TypetalkError, params[:error_class]
+      assert_equal "failed to post, msg: Bearer error=\"invalid_scope\", code: 400", params[:error]
+    }
+    d.emit({'message' => 'test1'})
+    d.run()
+  end
+
   def test_throttle
     d = create_driver(CONFIG_THROTTLE)
     mock(d.instance.typetalk).post_message(1, 'notice : test1')
