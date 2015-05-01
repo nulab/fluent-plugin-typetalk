@@ -15,6 +15,8 @@ module Fluent
     config_param :interval, :time, :default => 60
     config_param :limit, :integer, :default => 10
 
+    config_param :truncate_message, :bool, :default => true
+
     attr_reader :typetalk
 
     # Define `log` method for v0.10.42 or earlier
@@ -136,7 +138,11 @@ module Fluent
         end
       end
 
-      (message % values).gsub(/\\n/, "\n")
+      truncate (@message % values).gsub(/\\n/, "\n")
+    end
+
+    def truncate(str, limit=4096)
+      @truncate_message && str.size >= limit ? str[0,limit-5] + ' ...' : str
     end
 
   end

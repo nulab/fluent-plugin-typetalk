@@ -39,6 +39,17 @@ class TypetalkOutputTest < Test::Unit::TestCase
     limit 0
   ]
 
+  CONFIG_TRUNCATE = %[
+    type typetalk
+    client_id 123456
+    client_secret secret
+    topic_id 1
+    message %s
+    out_keys message
+    truncate_message true
+  ]
+
+
   def create_driver(conf = CONFIG, tag = 'test')
     Fluent::Test::OutputTestDriver.new(Fluent::TypetalkOutput, tag).configure(conf)
   end
@@ -59,7 +70,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_write
     d = create_driver()
-    stub(d.instance.typetalk).post_message(1, 'notice : test1')
+    mock(d.instance.typetalk).post_message(1, 'notice : test1')
     d.emit({'message' => 'test1'})
     d.run()
   end
@@ -68,7 +79,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
     d = create_driver(CONFIG, 'warn')
     d.instance.message = "notice : %s [%s]"
     d.instance.out_keys = ["message", "time"]
-    stub(d.instance.typetalk).post_message(1, "notice : test1 [1399910738]")
+    mock(d.instance.typetalk).post_message(1, "notice : test1 [1399910738]")
 
     ENV["TZ"]="Asia/Tokyo"
     t = Time.strptime('2014-05-13 01:05:38', '%Y-%m-%d %T')
@@ -120,8 +131,8 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_throttle
     d = create_driver(CONFIG_THROTTLE)
-    stub(d.instance.typetalk).post_message(1, 'notice : test1')
-    stub(d.instance.typetalk).post_message(1, 'notice : test3')
+    mock(d.instance.typetalk).post_message(1, 'notice : test1')
+    mock(d.instance.typetalk).post_message(1, 'notice : test3')
     stub(d.instance.log).error {|name, params|
       assert_equal "out_typetalk:", name
       assert_equal "number of posting message within 5.0(sec) reaches to the limit 1", params[:error]
@@ -130,6 +141,17 @@ class TypetalkOutputTest < Test::Unit::TestCase
     d.emit({'message' => 'test2'})
     sleep 5
     d.emit({'message' => 'test3'})
+    d.run()
+  end
+
+  def test_truncate
+    d = create_driver(CONFIG_TRUNCATE)
+    mock(d.instance.typetalk).post_message(1, '1')
+    mock(d.instance.typetalk).post_message(1, '1'*4095)
+    mock(d.instance.typetalk).post_message(1, '1'*4091 + ' ...')
+    d.emit({'message' => '1'})
+    d.emit({'message' => '1'*4095}) # not truncated
+    d.emit({'message' => '1'*4096}) # should be truncated
     d.run()
   end
 

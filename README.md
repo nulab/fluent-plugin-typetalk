@@ -61,8 +61,17 @@ By default, the number of notification you can send within a minute is limited t
   limit 10
 </match>
 ```
-
 In the example above, you can allow 10 notifications to be sent within 300 seconds. To remove the notification throttle, set both parameters to 0.
+
+Typetalk doesn't allow message which length is equal to or greater than 4096. Since 0.0.5, the message over 4096 characters will be truncated automatically. To turn off this behaviour, set truncate_message to false
+```
+<match ...>
+  type typetalk
+  :
+  truncate_message false
+</match>
+```
+If you set this value to false, the message over 4096 characters will not be sent to Typetalk.
 
 ## TODO
 
@@ -78,6 +87,16 @@ $ bundle install --path vendor/bundle
 To run tests, do the following.
 ```
 $ VERBOSE=1 bundle exec rake test
+```
+
+If you want to run a certain file, run rake like this
+```
+$ VERBOSE=1 bundle exec rake test TEST=test/plugin/test_out_typetalk.rb
+```
+
+In addition, you can run specific method like this.
+```
+$ VERBOSE=1 bundle exec rake test TEST=test/plugin/test_out_typetalk.rb TESTOPTS="--name=test_post_message_invalid_request_error"
 ```
 
 When releasing, call rake release as follows.
