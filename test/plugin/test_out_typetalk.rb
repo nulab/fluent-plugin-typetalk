@@ -175,11 +175,11 @@ class TypetalkOutputTest < Test::Unit::TestCase
   def test_truncate
     d = create_driver(CONFIG_TRUNCATE)
     mock(d.instance.typetalk).post_message(1, '1')
-    mock(d.instance.typetalk).post_message(1, '1'*4095)
-    mock(d.instance.typetalk).post_message(1, '1'*4091 + ' ...')
+    mock(d.instance.typetalk).post_message(1, '1'*3999)
+    mock(d.instance.typetalk).post_message(1, '1'*3995 + ' ...')
     d.emit({'message' => '1'})
-    d.emit({'message' => '1'*4095}) # not truncated
-    d.emit({'message' => '1'*4096}) # should be truncated
+    d.emit({'message' => '1'*3999}) # not truncated
+    d.emit({'message' => '1'*4000}) # should be truncated
     d.run()
   end
 

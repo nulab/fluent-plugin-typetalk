@@ -63,7 +63,7 @@ By default, the number of notification you can send within a minute is limited t
 ```
 In the example above, you can allow 10 notifications to be sent within 300 seconds. To remove the notification throttle, set both parameters to 0.
 
-Typetalk doesn't allow message which length is equal to or greater than 4096. Since 0.0.5, the message over 4096 characters will be truncated automatically. To turn off this behaviour, set truncate_message to false
+Typetalk doesn't allow message which length is equal to or greater than 4000. Since 0.0.5, the message over 4000 characters will be truncated automatically. To turn off this behaviour, set truncate_message to false
 ```
 <match ...>
   type typetalk
@@ -71,7 +71,7 @@ Typetalk doesn't allow message which length is equal to or greater than 4096. Si
   truncate_message false
 </match>
 ```
-If you set this value to false, the message over 4096 characters will not be sent to Typetalk.
+If you set this value to false, the message over 4000 characters will not be sent to Typetalk.
 
 ## TODO
 

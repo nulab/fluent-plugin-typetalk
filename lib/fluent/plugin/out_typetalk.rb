@@ -152,7 +152,7 @@ module Fluent
       truncate (@message % values).gsub(/\\n/, "\n")
     end
 
-    def truncate(str, limit=4096)
+    def truncate(str, limit=4000)
       @truncate_message && str.size >= limit ? str[0,limit-5] + ' ...' : str
     end
 
