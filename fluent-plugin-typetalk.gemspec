@@ -20,6 +20,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 1.3"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rr", ">= 1.0.0"
+  spec.add_development_dependency "test-unit", "> 3"
+  spec.add_development_dependency "test-unit-rr"
   # not to use mime-types 3.0 that doesn't support ruby 1.9.x
   spec.add_runtime_dependency "mime-types", "~> 2.6", "< 2.99"
   spec.add_runtime_dependency "fluentd"
