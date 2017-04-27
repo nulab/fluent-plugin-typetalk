@@ -3,7 +3,7 @@ module Fluent
     Fluent::Plugin.register_output('typetalk', self)
 
     config_param :client_id, :string
-    config_param :client_secret, :string
+    config_param :client_secret, :string, :secret => true
     config_param :topic_id, :integer
 
     config_param :message, :string
