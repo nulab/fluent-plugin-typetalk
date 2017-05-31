@@ -1,9 +1,10 @@
 # coding: utf-8
 
 require 'helper'
+require 'fluent/plugin/out_typetalk'
 
 class TypetalkOutputTest < Test::Unit::TestCase
-  
+
   def setup
     Fluent::Test.setup
   end
@@ -50,8 +51,8 @@ class TypetalkOutputTest < Test::Unit::TestCase
   ]
 
 
-  def create_driver(conf = CONFIG, tag = 'test')
-    Fluent::Test::OutputTestDriver.new(Fluent::TypetalkOutput, tag).configure(conf)
+  def create_driver(conf = CONFIG)
+    Fluent::Test::Driver::Output.new(Fluent::Plugin::TypetalkOutput).configure(conf)
   end
 
   def test_configure
@@ -71,20 +72,22 @@ class TypetalkOutputTest < Test::Unit::TestCase
   def test_write
     d = create_driver()
     mock(d.instance.typetalk).post_message(1, 'notice : test1')
-    d.emit({'message' => 'test1'})
-    d.run()
+    d.run(default_tag: "test") do
+      d.feed({'message' => 'test1'})
+    end
   end
 
   def test_template
-    d = create_driver(CONFIG, 'warn')
+    d = create_driver()
     d.instance.message = "notice : %s [%s]"
     d.instance.out_keys = ["message", "time"]
     mock(d.instance.typetalk).post_message(1, "notice : test1 [1399910738]")
 
     ENV["TZ"]="Asia/Tokyo"
     t = Time.strptime('2014-05-13 01:05:38', '%Y-%m-%d %T')
-    d.emit({'message' => 'test1'}, t)
-    d.run()
+    d.run(default_tag: "warn") do
+      d.feed(t.to_i, {'message' => 'test1'})
+    end
   end
 
   def test_post_message_unauthorized_error
@@ -94,11 +97,12 @@ class TypetalkOutputTest < Test::Unit::TestCase
     }
     stub(d.instance.log).error {|name, params|
       assert_equal "out_typetalk:", name
-      assert_equal Fluent::TypetalkError, params[:error_class]
+      assert_equal Fluent::Plugin::TypetalkError, params[:error_class]
       assert_equal "invalid credentials used. check client_id and client_secret in your configuration.", params[:error]
     }
-    d.emit({'message' => 'test1'})
-    d.run()
+    d.run(default_tag: "test") do
+      d.feed({'message' => 'test1'})
+    end
   end
 
   def test_post_message_invalid_request_error
@@ -108,11 +112,12 @@ class TypetalkOutputTest < Test::Unit::TestCase
     }
     stub(d.instance.log).error {|name, params|
       assert_equal "out_typetalk:", name
-      assert_equal Fluent::TypetalkError, params[:error_class]
+      assert_equal Fluent::Plugin::TypetalkError, params[:error_class]
       assert_equal "failed to post, msg: invalid_client, code: 400", params[:error]
     }
-    d.emit({'message' => 'test1'})
-    d.run()
+    d.run(default_tag: "test") do
+      d.feed({'message' => 'test1'})
+    end
   end
 
   def test_post_message_maxlength_error
@@ -122,11 +127,12 @@ class TypetalkOutputTest < Test::Unit::TestCase
     }
     stub(d.instance.log).error {|name, params|
       assert_equal "out_typetalk:", name
-      assert_equal Fluent::TypetalkError, params[:error_class]
+      assert_equal Fluent::Plugin::TypetalkError, params[:error_class]
       assert_equal "failed to post, msg: message : Maximum length is 4,096 characters., code: 400", params[:error]
     }
-    d.emit({'message' => 'test1'})
-    d.run()
+    d.run(default_tag: "test") do
+      d.feed({'message' => 'test1'})
+    end
   end
 
   def test_post_message_notfound_error
@@ -136,11 +142,12 @@ class TypetalkOutputTest < Test::Unit::TestCase
     }
     stub(d.instance.log).error {|name, params|
       assert_equal "out_typetalk:", name
-      assert_equal Fluent::TypetalkError, params[:error_class]
+      assert_equal Fluent::Plugin::TypetalkError, params[:error_class]
       assert_equal "failed to post, msg: , code: 404", params[:error]
     }
-    d.emit({'message' => 'test1'})
-    d.run()
+    d.run(default_tag: "test") do
+      d.feed({'message' => 'test1'})
+    end
   end
 
   def test_oauth2_error
@@ -150,11 +157,12 @@ class TypetalkOutputTest < Test::Unit::TestCase
     }
     stub(d.instance.log).error {|name, params|
       assert_equal "out_typetalk:", name
-      assert_equal Fluent::TypetalkError, params[:error_class]
+      assert_equal Fluent::Plugin::TypetalkError, params[:error_class]
       assert_equal "failed to post, msg: Bearer error=\"invalid_scope\", code: 400", params[:error]
     }
-    d.emit({'message' => 'test1'})
-    d.run()
+    d.run(default_tag: "test") do
+      d.feed({'message' => 'test1'})
+    end
   end
 
   def test_throttle
@@ -165,11 +173,12 @@ class TypetalkOutputTest < Test::Unit::TestCase
       assert_equal "out_typetalk:", name
       assert_equal "number of posting message within 5.0(sec) reaches to the limit 1", params[:error]
     }
-    d.emit({'message' => 'test1'})
-    d.emit({'message' => 'test2'})
-    sleep 5
-    d.emit({'message' => 'test3'})
-    d.run()
+    d.run(default_tag: "test") do
+      d.feed({'message' => 'test1'})
+      d.feed({'message' => 'test2'})
+      sleep 5
+      d.feed({'message' => 'test3'})
+    end
   end
 
   def test_truncate
@@ -177,10 +186,11 @@ class TypetalkOutputTest < Test::Unit::TestCase
     mock(d.instance.typetalk).post_message(1, '1')
     mock(d.instance.typetalk).post_message(1, '1'*3999)
     mock(d.instance.typetalk).post_message(1, '1'*3995 + ' ...')
-    d.emit({'message' => '1'})
-    d.emit({'message' => '1'*3999}) # not truncated
-    d.emit({'message' => '1'*4000}) # should be truncated
-    d.run()
+    d.run(default_tag: "test") do
+      d.feed({'message' => '1'})
+      d.feed({'message' => '1'*3999}) # not truncated
+      d.feed({'message' => '1'*4000}) # should be truncated
+    end
   end
 
 end
