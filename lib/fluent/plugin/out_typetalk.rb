@@ -1,5 +1,5 @@
-module Fluent
-  class TypetalkOutput < Fluent::Output
+module Fluent::Plugin
+  class TypetalkOutput < Fluent::Plugin::Output
     Fluent::Plugin.register_output('typetalk', self)
 
     config_param :client_id, :string
@@ -73,7 +73,7 @@ module Fluent
       super
     end
 
-    def emit(tag, es, chain)
+    def process(tag, es)
       es.each do |time, record|
         if @need_throttle && throttle(time)
           log.error("out_typetalk:", :error => "number of posting message within #{@interval}(sec) reaches to the limit #{@limit}")
@@ -86,8 +86,6 @@ module Fluent
           log.error("out_typetalk:", :error_class => e.class, :error => e.message)
         end
       end
-
-      chain.next
     end
 
     def throttle(time)
