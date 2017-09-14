@@ -2,7 +2,7 @@
 
 ## Overview
 
-[Fluentd](http://fluentd.org) plugin to emit notifications to [Typetalk](http://typetalk.in/).
+[Fluentd](http://fluentd.org) plugin to emit notifications to [Typetalk](http://typetalk.com/).
 
 ## Requirements
 
@@ -27,7 +27,7 @@ $ sudo /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-typetalk
 
 ### Usage
 
-This plugin uses client credentials for authentication. See [the developer document](http://developers.typetalk.in/oauth.html) how to get your own credential.
+This plugin uses client credentials for authentication. See [the developer document](https://developer.nulab-inc.com/docs/typetalk/#client) how to get your own credential.
 ```
 <match ...>
   type typetalk
