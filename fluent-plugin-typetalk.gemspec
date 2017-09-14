@@ -3,7 +3,7 @@ $:.push File.expand_path('../lib', __FILE__)
 
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-typetalk"
-  spec.version       = "0.1.0"
+  spec.version       = "0.2.0"
   spec.authors       = ["tksmd","umakoz"]
   spec.email         = ["someda@isenshi.com"]
   spec.description   = %q{fluent plugin to send message to typetalk}
