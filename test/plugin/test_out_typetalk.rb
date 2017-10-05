@@ -71,7 +71,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_write
     d = create_driver()
-    mock(d.instance.typetalk).post_message(1, 'notice : test1')
+    mock(d.instance.typetalk).post_message(1, 'notice : test1', {show_link_meta: false})
     d.run(default_tag: "test") do
       d.feed({'message' => 'test1'})
     end
@@ -81,7 +81,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
     d = create_driver()
     d.instance.message = "notice : %s [%s]"
     d.instance.out_keys = ["message", "time"]
-    mock(d.instance.typetalk).post_message(1, "notice : test1 [1399910738]")
+    mock(d.instance.typetalk).post_message(1, "notice : test1 [1399910738]", {show_link_meta: false})
 
     ENV["TZ"]="Asia/Tokyo"
     t = Time.strptime('2014-05-13 01:05:38', '%Y-%m-%d %T')
@@ -92,7 +92,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_post_message_unauthorized_error
     d = create_driver()
-    stub(d.instance.typetalk).post_message(1, 'notice : test1') {
+    stub(d.instance.typetalk).post_message(1, 'notice : test1', {show_link_meta: false}) {
       raise Typetalk::Unauthorized, {status:401, headers:{}, body:''}.to_json
     }
     stub(d.instance.log).error {|name, params|
@@ -107,7 +107,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_post_message_invalid_request_error
     d = create_driver()
-    stub(d.instance.typetalk).post_message(1, 'notice : test1') {
+    stub(d.instance.typetalk).post_message(1, 'notice : test1', {show_link_meta: false}) {
       raise Typetalk::InvalidRequest, {status:400, headers:{}, body:'{"error":"invalid_client", "error_description":""}'}.to_json
     }
     stub(d.instance.log).error {|name, params|
@@ -122,7 +122,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_post_message_maxlength_error
     d = create_driver()
-    stub(d.instance.typetalk).post_message(1, 'notice : test1') {
+    stub(d.instance.typetalk).post_message(1, 'notice : test1', {show_link_meta: false}) {
       raise Typetalk::InvalidRequest, {status:400, headers:{}, body:'{"errors":[{"field":"message", "name":"error.maxLength", "message":"Maximum length is 4,096 characters."}]}'}.to_json
     }
     stub(d.instance.log).error {|name, params|
@@ -137,7 +137,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_post_message_notfound_error
     d = create_driver()
-    stub(d.instance.typetalk).post_message(1, 'notice : test1') {
+    stub(d.instance.typetalk).post_message(1, 'notice : test1', {show_link_meta: false}) {
       raise Typetalk::NotFound, {status:404, headers:{}, body:'{"errors":[]}'}.to_json
     }
     stub(d.instance.log).error {|name, params|
@@ -152,7 +152,7 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_oauth2_error
     d = create_driver()
-    stub(d.instance.typetalk).post_message(1, 'notice : test1') {
+    stub(d.instance.typetalk).post_message(1, 'notice : test1', {show_link_meta: false}) {
       raise Typetalk::InvalidRequest, {status:400, headers:'{"www-authenticate": "Bearer error=\"invalid_scope\""}', body:""}.to_json
     }
     stub(d.instance.log).error {|name, params|
@@ -167,8 +167,8 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_throttle
     d = create_driver(CONFIG_THROTTLE)
-    mock(d.instance.typetalk).post_message(1, 'notice : test1')
-    mock(d.instance.typetalk).post_message(1, 'notice : test3')
+    mock(d.instance.typetalk).post_message(1, 'notice : test1', {show_link_meta: false})
+    mock(d.instance.typetalk).post_message(1, 'notice : test3', {show_link_meta: false})
     stub(d.instance.log).error {|name, params|
       assert_equal "out_typetalk:", name
       assert_equal "number of posting message within 5.0(sec) reaches to the limit 1", params[:error]
@@ -183,9 +183,9 @@ class TypetalkOutputTest < Test::Unit::TestCase
 
   def test_truncate
     d = create_driver(CONFIG_TRUNCATE)
-    mock(d.instance.typetalk).post_message(1, '1')
-    mock(d.instance.typetalk).post_message(1, '1'*3999)
-    mock(d.instance.typetalk).post_message(1, '1'*3995 + ' ...')
+    mock(d.instance.typetalk).post_message(1, '1', {show_link_meta: false})
+    mock(d.instance.typetalk).post_message(1, '1'*3999, {show_link_meta: false})
+    mock(d.instance.typetalk).post_message(1, '1'*3995 + ' ...', {show_link_meta: false})
     d.run(default_tag: "test") do
       d.feed({'message' => '1'})
       d.feed({'message' => '1'*3999}) # not truncated
