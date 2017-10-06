@@ -105,7 +105,7 @@ module Fluent::Plugin
     def send_message(tag, time, record)
       message = evaluate_message(tag, time, record)
       begin
-        @typetalk.post_message(@topic_id, message)
+        @typetalk.post_message(@topic_id, message, {show_link_meta: false})
       rescue Typetalk::Unauthorized
         raise TypetalkError, "invalid credentials used. check client_id and client_secret in your configuration."
       rescue => e
