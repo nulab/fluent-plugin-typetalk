@@ -1,3 +1,6 @@
+require 'socket'
+require 'typetalk'
+
 module Fluent::Plugin
   class TypetalkOutput < Fluent::Plugin::Output
     Fluent::Plugin.register_output('typetalk', self)
@@ -21,8 +24,6 @@ module Fluent::Plugin
 
     def initialize
       super
-      require 'socket'
-      require 'typetalk'
     end
 
     def configure(conf)
