@@ -12,7 +12,7 @@ module Fluent::Plugin
     config_param :topic_id, :integer
 
     config_param :message, :string
-    config_param :out_keys, :string, default: ""
+    config_param :out_keys, :array, default: []
     config_param :time_key, :string, default: 'time'
     config_param :time_format, :string, default: nil
     config_param :tag_key, :string, default: 'tag'
@@ -38,8 +38,6 @@ module Fluent::Plugin
       end
       @typetalk = Typetalk::Api.new
       @hostname = Socket.gethostname
-
-      @out_keys = @out_keys.split(',')
 
       begin
         @message % (['1'] * @out_keys.length)
