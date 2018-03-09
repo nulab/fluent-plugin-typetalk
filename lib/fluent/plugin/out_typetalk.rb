@@ -24,10 +24,6 @@ module Fluent::Plugin
 
     attr_reader :typetalk
 
-    def initialize
-      super
-    end
-
     def configure(conf)
       super
       Typetalk.configure do |c|
@@ -58,14 +54,6 @@ module Fluent::Plugin
       @need_throttle = @limit > 0 && @interval > 0
       @slot = []
 
-    end
-
-    def start
-      super
-    end
-
-    def shutdown
-      super
     end
 
     def process(tag, es)
