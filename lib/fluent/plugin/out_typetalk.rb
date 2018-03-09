@@ -1,6 +1,8 @@
 require 'socket'
 require 'typetalk'
 
+require 'fluent/plugin/output'
+
 module Fluent::Plugin
   class TypetalkOutput < Fluent::Plugin::Output
     Fluent::Plugin.register_output('typetalk', self)
