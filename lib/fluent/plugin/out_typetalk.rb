@@ -19,12 +19,6 @@ module Fluent::Plugin
 
     attr_reader :typetalk
 
-    # Define `log` method for v0.10.42 or earlier
-    # see http://blog.livedoor.jp/sonots/archives/36150373.html
-    unless method_defined?(:log)
-      define_method("log") { $log }
-    end
-
     def initialize
       super
       require 'socket'
