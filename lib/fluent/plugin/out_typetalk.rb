@@ -1,35 +1,28 @@
+require 'socket'
+require 'typetalk'
+
+require 'fluent/plugin/output'
+
 module Fluent::Plugin
   class TypetalkOutput < Fluent::Plugin::Output
     Fluent::Plugin.register_output('typetalk', self)
 
     config_param :client_id, :string
-    config_param :client_secret, :string, :secret => true
+    config_param :client_secret, :string, secret: true
     config_param :topic_id, :integer
 
     config_param :message, :string
-    config_param :out_keys, :string, :default => ""
-    config_param :time_key, :string, :default => 'time'
-    config_param :time_format, :string, :default => nil
-    config_param :tag_key, :string, :default => 'tag'
+    config_param :out_keys, :array, default: []
+    config_param :time_key, :string, default: 'time'
+    config_param :time_format, :string, default: nil
+    config_param :tag_key, :string, default: 'tag'
 
-    config_param :interval, :time, :default => 60
-    config_param :limit, :integer, :default => 10
+    config_param :interval, :time, default: 60
+    config_param :limit, :integer, default: 10
 
-    config_param :truncate_message, :bool, :default => true
+    config_param :truncate_message, :bool, default: true
 
     attr_reader :typetalk
-
-    # Define `log` method for v0.10.42 or earlier
-    # see http://blog.livedoor.jp/sonots/archives/36150373.html
-    unless method_defined?(:log)
-      define_method("log") { $log }
-    end
-
-    def initialize
-      super
-      require 'socket'
-      require 'typetalk'
-    end
 
     def configure(conf)
       super
@@ -41,8 +34,6 @@ module Fluent::Plugin
       end
       @typetalk = Typetalk::Api.new
       @hostname = Socket.gethostname
-
-      @out_keys = @out_keys.split(',')
 
       begin
         @message % (['1'] * @out_keys.length)
@@ -62,28 +53,19 @@ module Fluent::Plugin
 
       @need_throttle = @limit > 0 && @interval > 0
       @slot = []
-
-    end
-
-    def start
-      super
-    end
-
-    def shutdown
-      super
     end
 
     def process(tag, es)
       es.each do |time, record|
         if @need_throttle && throttle(time)
-          log.error("out_typetalk:", :error => "number of posting message within #{@interval}(sec) reaches to the limit #{@limit}")
+          log.error("out_typetalk:", error: "number of posting message within #{@interval}(sec) reaches to the limit #{@limit}")
           next
         end
 
         begin
           send_message(tag, time, record)
         rescue => e
-          log.error("out_typetalk:", :error_class => e.class, :error => e.message)
+          log.error("out_typetalk:", error_class: e.class, error: e.message)
         end
       end
     end
