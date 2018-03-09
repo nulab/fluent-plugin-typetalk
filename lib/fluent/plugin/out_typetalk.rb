@@ -8,19 +8,19 @@ module Fluent::Plugin
     Fluent::Plugin.register_output('typetalk', self)
 
     config_param :client_id, :string
-    config_param :client_secret, :string, :secret => true
+    config_param :client_secret, :string, secret: true
     config_param :topic_id, :integer
 
     config_param :message, :string
-    config_param :out_keys, :string, :default => ""
-    config_param :time_key, :string, :default => 'time'
-    config_param :time_format, :string, :default => nil
-    config_param :tag_key, :string, :default => 'tag'
+    config_param :out_keys, :string, default: ""
+    config_param :time_key, :string, default: 'time'
+    config_param :time_format, :string, default: nil
+    config_param :tag_key, :string, default: 'tag'
 
-    config_param :interval, :time, :default => 60
-    config_param :limit, :integer, :default => 10
+    config_param :interval, :time, default: 60
+    config_param :limit, :integer, default: 10
 
-    config_param :truncate_message, :bool, :default => true
+    config_param :truncate_message, :bool, default: true
 
     attr_reader :typetalk
 
@@ -73,14 +73,14 @@ module Fluent::Plugin
     def process(tag, es)
       es.each do |time, record|
         if @need_throttle && throttle(time)
-          log.error("out_typetalk:", :error => "number of posting message within #{@interval}(sec) reaches to the limit #{@limit}")
+          log.error("out_typetalk:", error: "number of posting message within #{@interval}(sec) reaches to the limit #{@limit}")
           next
         end
 
         begin
           send_message(tag, time, record)
         rescue => e
-          log.error("out_typetalk:", :error_class => e.class, :error => e.message)
+          log.error("out_typetalk:", error_class: e.class, error: e.message)
         end
       end
     end
