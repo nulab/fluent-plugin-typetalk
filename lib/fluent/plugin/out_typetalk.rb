@@ -53,7 +53,6 @@ module Fluent::Plugin
 
       @need_throttle = @limit > 0 && @interval > 0
       @slot = []
-
     end
 
     def process(tag, es)
