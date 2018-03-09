@@ -30,7 +30,7 @@ $ sudo /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-typetalk
 This plugin uses client credentials for authentication. See [the developer document](https://developer.nulab-inc.com/docs/typetalk/#client) how to get your own credential.
 ```
 <match ...>
-  type typetalk
+  @type typetalk
   client_id YOUR_CLIENT_ID
   client_secret YOUR_CLIENT_SECRET
   topic_id YOUR_TOPIC_ID
@@ -47,7 +47,7 @@ The notified message will look like this : `notice: count.service [2014/05/13 03
 This plugin allows you to use special value namely $hostname in out_keys. By using it, you can include hostname within the notified message.
 ```
 <match ...>
-  type typetalk
+  @type typetalk
   client_id YOUR_CLIENT_ID
   client_secret YOUR_CLIENT_SECRET
   topic_id YOUR_TOPIC_ID
@@ -62,7 +62,7 @@ This plugin allows you to use special value namely $hostname in out_keys. By usi
 By default, the number of notification you can send within a minute is limited to 10. Log lines that exceed this limit will be discarded. You can change it with `interval` and `limit` parameters.
 ```
 <match ...>
-  type typetalk
+  @type typetalk
   :
   interval 300
   limit 10
@@ -73,7 +73,7 @@ In the example above, you can allow 10 notifications to be sent within 300 secon
 Typetalk doesn't allow message which length is equal to or greater than 4000. Since 0.0.5, the message over 4000 characters will be truncated automatically. To turn off this behaviour, set truncate_message to false
 ```
 <match ...>
-  type typetalk
+  @type typetalk
   :
   truncate_message false
 </match>
